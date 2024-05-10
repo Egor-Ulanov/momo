@@ -1,0 +1,73 @@
+<!doctype html>
+{% load static %}
+{% block content %}
+
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .hidden {
+            display:none;
+        }
+
+      .loader {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: url("{%static 'gif/pedro-racoon.gif' %}") no-repeat center center;
+            background-size: cover;
+            justify-content: center;
+            position: relative;
+        }
+    </style>
+    <title>Генерация изображения</title>
+</head>
+<body>
+
+    <center> <h1 class="textForCenter"  >Сгенерировать изображение</h1></center>
+
+        <form  action="">
+            <center><button class="button"  id = "generateBtn" type="submit">Сгенерировать</button></center>
+        </form>
+
+    <center><div id="loader" class="loader hidden"></div></center>
+    <center><img id="imageDisplay" src="{% static 'myapp/images/generated_image.png' %}" alt="Generated Image" class="hidden"></center>
+
+    <script>
+        document.getElementsByTagName('form')[0].addEventListener('submit', (event)=>{
+            event.preventDefault();
+        })
+
+       document.getElementById('generateBtn').addEventListener('click', function() {
+            var loader = document.getElementById('loader');
+            var imageDisplay = document.getElementById('imageDisplay');
+            loader.classList.remove('hidden');
+            imageDisplay.classList.add('hidden');
+
+            fetch('{% url "run_neural_network" %}', {
+                method: 'POST',
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(data)
+                        imageDisplay.src = "{% static 'img/img2.png' %}";
+                        imageDisplay.classList.remove('hidden');
+                    } else {
+                        alert('Ошибка генерации изображения');
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    loader.classList.add('hidden');
+                });
+        });
+    </script>
+
+</body>
+</html>
+{%endblock%}
