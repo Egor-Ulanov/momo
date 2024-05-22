@@ -3,5 +3,5 @@ from django.urls import path
 
 urlpatterns = [
     path('', views.main),
-    path('run_neural_network/', views.run_neural_network, name='run_neural_network'),
+    path('classify_comment', views.classify_comment, name='classify_comment'),
 ]

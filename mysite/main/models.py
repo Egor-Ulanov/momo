@@ -1,4 +1,6 @@
 from django.db import models
-from torch import autocast
 
-# Create your models here.
+class Comment(models.Model):
+    text = models.TextField()
+    author = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)

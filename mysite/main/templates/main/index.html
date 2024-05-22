@@ -1,73 +1,89 @@
-<!doctype html>
-{% load static %}
-{% block content %}
-
-<html lang="ru">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        .hidden {
-            display:none;
-        }
-
-      .loader {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: url("{%static 'gif/pedro-racoon.gif' %}") no-repeat center center;
-            background-size: cover;
-            justify-content: center;
-            position: relative;
-        }
-    </style>
-    <title>Генерация изображения</title>
+  <title>Demo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </head>
 <body>
 
-    <center> <h1 class="textForCenter"  >Сгенерировать изображение</h1></center>
+<div class="container">
+  <h2>Токсичен ли этот комментарий?</h2>
+  <form id="checkForm">
+    <div class="form-group">
+      <div class="col-md-10">
+        <input type="text" class="form-control" id="query" name="query" placeholder="Введите текст для проверки" autofocus>
+        <span id="characterCount"></span> characters remaining
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-block btn-primary">Отправка</button>
+      </div>
+    </div>
+  </form>
+</div>
+<div id="resultContainer" class="container" hidden>
+  <h2>Ответ модели</h2>
+  <div id="result"></div>
+  <h2>Результат</h2>
+  <div id="explanation"></div>
+</div>
 
-        <form  action="">
-            <center><button class="button"  id = "generateBtn" type="submit">Сгенерировать</button></center>
-        </form>
+<script>
+$(document).ready(function() {
+  $("#query").on("keyup", function() {
+    var remainingChars = 250 - $(this).val().length; // Adjust character limit
+    $("#characterCount").text(remainingChars);
+  });
+  $("#checkForm").submit(function(event) {
+    event.preventDefault();
 
-    <center><div id="loader" class="loader hidden"></div></center>
-    <center><img id="imageDisplay" src="{% static 'myapp/images/generated_image.png' %}" alt="Generated Image" class="hidden"></center>
+    var $form = $(this),
+      term = $form.find("input[name='query']").val();
 
-    <script>
-        document.getElementsByTagName('form')[0].addEventListener('submit', (event)=>{
-            event.preventDefault();
-        })
+    // Send AJAX request to /classify_comment endpoint
+    $.ajax({
+      url: "/classify_comment",
+      data: {
+        text: term
+      },
+      method: "GET",
+      dataType: "json",
+      success: function(response) {
+        // Process and display classification results
+        if (response.label && response.score) {
+          var label = response.label;
+          var score = response.score;
 
-       document.getElementById('generateBtn').addEventListener('click', function() {
-            var loader = document.getElementById('loader');
-            var imageDisplay = document.getElementById('imageDisplay');
-            loader.classList.remove('hidden');
-            imageDisplay.classList.add('hidden');
+          var explanation = "Вероятность: "+ score;
+          var clas = "Не токсичный";
+          if (label == "LABEL_1") {
+            clas = "Токсичный";
+          }
 
-            fetch('{% url "run_neural_network" %}', {
-                method: 'POST',
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log(data)
-                        imageDisplay.src = "{% static 'img/img2.png' %}";
-                        imageDisplay.classList.remove('hidden');
-                    } else {
-                        alert('Ошибка генерации изображения');
-                    }
-                })
-                .catch(error => console.error('Error:', error))
-                .finally(() => {
-                    loader.classList.add('hidden');
-                });
-        });
-    </script>
+          $("#result").empty().append(clas);
+          $("#score").empty().append(score.toFixed(2));
+          $("#explanation").empty().append(explanation);
+          $("#resultContainer").show();
+        } else {
+          // Handle error if response is missing label or score
+          $("#result").empty().append("Ошибка классификации");
+          $("#explanation").empty();
+          $("#resultContainer").show();
+        }
+      },
+      error: function(response) {
+        // Handle AJAX request error
+        $("#result").empty().append("Ошибка запроса");
+        $("#explanation").empty();
+        $("#resultContainer").show();
+      }
+    });
+  });
+});
+</script>
 
 </body>
 </html>
-{%endblock%}
